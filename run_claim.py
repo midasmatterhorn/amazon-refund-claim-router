@@ -4,7 +4,7 @@ The router only ever sees `claim_text` — no labels, no amounts, no investigato
 notes. The label is compared only after the decision is printed.
 
 Usage (from the project root):
-    .venv/bin/python -I run_claim.py --claims data/claims.csv --claim-id CLM-0001
+    .venv/bin/python -I run_claim.py --claims shopify_amazon_refund_claims_labeled.csv --claim-id CLM-0001
 """
 import argparse
 import csv
