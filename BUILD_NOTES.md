@@ -58,15 +58,37 @@ This also demonstrates the design decision recorded in the README: one claim
 > need one, two, or all three specialists; include every specialist whose
 > problem the claim text actually describes. Judge only from the claim text…"
 
-Full prompt: `router.py::ROUTER_SYSTEM_PROMPT`. JSON shape sent to OpenRouter:
-`router.py::JSON_SCHEMA` (strict, `additionalProperties: false`).
+Full prompt: `router.py::ROUTER_SYSTEM_PROMPT`.
+
+### The part that tells the model to return the schema
+
+Sent verbatim with every request as `response_format: json_schema` (strict —
+the provider rejects answers that add fields or break the shape), plus this
+instruction in the fallback path (`router.py::JSON_ONLY_HINT`):
+
+> "Reply with ONLY a JSON object: `{"specialists": ["billing"], "reason": "...", "confidence": 0.0}` where specialists is a non-empty array drawn from billing, shipping, stock and confidence is a number between 0 and 1."
+
+And the strict schema itself (`router.py::JSON_SCHEMA`):
+
+```json
+"schema": {
+  "type": "object",
+  "properties": {
+    "specialists": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "string", "enum": ["billing", "shipping", "stock"]}
+    },
+    "reason": {"type": "string", "minLength": 1},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+  },
+  "required": ["specialists", "reason", "confidence"],
+  "additionalProperties": false
+}
+```
 
 ## What I checked
 
-The reply passed the Pydantic checker (`check_decision`) before printing, and
-the printed model id comes straight from `OPENROUTER_MODEL`
-(`baidu/ernie-5.5-flash-preview:free`) — the same id to verify on the OpenRouter
-Activity page for this request.
+Checked against the label: the routed set `{billing, shipping, stock}` equals the investigator's `billing|shipping|stock` → **exact 3/3 match** (`label_match` in `run_claim.py`, compared after the decision was printed).
 
 ## Test suite
 
