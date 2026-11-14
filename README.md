@@ -59,7 +59,7 @@ shape. If a key ever leaks, revoke it at https://openrouter.ai/settings/keys.
 ## Run claim 1
 
 ```bash
-.venv/bin/python -I run_claim.py --claims data/shopifyamazonrefundclaimslabeled.csv --claim-id CLM-0001
+.venv/bin/python -I run_claim.py --claims data/shopify_amazon_refund_claims_labeled.csv --claim-id CLM-0001
 ```
 
 `-I` runs Python isolated (the data directory never lands on `sys.path`); only

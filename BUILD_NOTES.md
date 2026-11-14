@@ -7,7 +7,7 @@ The API key (`OPENROUTER_API_KEY`) lives in the same ignored file and never appe
 ## Command
 
 ```bash
-.venv/bin/python -I run_claim.py --claims data/shopifyamazonrefundclaimslabeled.csv --claim-id CLM-0001
+.venv/bin/python -I run_claim.py --claims data/shopify_amazon_refund_claims_labeled.csv --claim-id CLM-0001
 ```
 
 The router received **claim 1's `claim_text` only** — no labels, no amounts, no
