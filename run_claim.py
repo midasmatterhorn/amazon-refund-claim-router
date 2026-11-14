@@ -35,7 +35,7 @@ def main() -> int:
     parser.add_argument(
         "--claims",
         type=Path,
-        default=PROJECT_DIR / "data" / "shopify_amazon_refund_claims_labeled.csv",
+        default=PROJECT_DIR / "shopify_amazon_refund_claims_labeled.csv",
     )
     parser.add_argument("--claim-id", default="CLM-0001")
     args = parser.parse_args()
