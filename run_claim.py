@@ -32,7 +32,11 @@ def read_claims(csv_path: Path) -> list:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Route one A-to-z claim via OpenRouter.")
-    parser.add_argument("--claims", type=Path, default=PROJECT_DIR / "data" / "claims.csv")
+    parser.add_argument(
+        "--claims",
+        type=Path,
+        default=PROJECT_DIR / "data" / "shopifyamazonrefundclaimslabeled.csv",
+    )
     parser.add_argument("--claim-id", default="CLM-0001")
     args = parser.parse_args()
 
