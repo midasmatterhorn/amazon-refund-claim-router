@@ -23,7 +23,13 @@ flowchart TD
 - **billing lane** — duplicate charges, charges after cancellation, fee/amount
   mismatches, missing credits.
 - **shipping lane** — lost packages, stalled tracking, "delivered" but nothing
-  arrived, items missing from the box.
+  arrived, items missing from the box. Two distinct shipping defects with two
+  distinct records: a **lost-parcel defect** rests on the carrier tracking record
+  (a parcel exists but never arrived — CLM-0003/0006/0012), while a
+  **never-shipped defect** rests on the shipment manifest / pack-and-release
+  record (an order line never entered the delivery stream — no parcel exists to
+  track, CLM-0001). The successful delivery of other lines in the same order is
+  not a defect.
 - **stock lane** — oversold lines, no restock date, lines canceled for
   unavailability.
 
@@ -81,6 +87,11 @@ about the same claim (verdicts contradict, or evidence conflicts — carrier say
 `disagreements` entry containing **both findings verbatim** and routes the case
 to `flag_for_investigator` instead of a refund verdict.
 
+The converse is corroboration: two lanes citing **different records about the
+same line** (shipment manifest says it never shipped; inventory says it was
+oversold) agree — the records complement each other, they do not conflict.
+Corroborating findings merge normally; only contradicting records conflict.
+
 ## Worked trace — the sold-out car seat claim (CLM-0001)
 
 Claim: stroller + car seat, card charged twice for the whole order, only the
@@ -91,11 +102,18 @@ stroller box arrived, seller page now says the car seat is out of stock.
    distinct defect root cause.
 2. **billing lane** → its defect is the duplicate settled charge (not the car
    seat) → `action_refund` for the extra charge.
-3. **shipping lane** → only one box delivered; the car seat line never shipped →
-   `action_refund` (missing shipment).
+3. **shipping lane** → its defect is the **car seat line that never shipped** —
+   the stroller box that did arrive was a normal, successful delivery, not a
+   defect. Rests on the **shipment manifest record** (order has two lines, only
+   the stroller line was ever packed and released; no parcel exists for the car
+   seat) — not on carrier tracking, which correctly delivered the one parcel
+   that existed → `action_refund` (never-shipped line).
 4. **stock lane** → car seat oversold, no restock date → `action_refund` (canceled line).
-5. **aggregator** → three findings, no contradictions → case = partial refund
-   (missing line + extra charge) — matches the label `partial_refund`, 489.98.
+5. **aggregator** → three findings, no contradictions. Note: shipping ("no
+   shipment ever existed for line 2") and stock ("line 2 was oversold") are two
+   different records about the same line — cross-domain **corroboration**, not
+   disagreement → case = partial refund (missing line + extra charge) — matches
+   the label `partial_refund`, 489.98.
 
 Contrast — a claim that is *only* sold-out (CLM-0004, baby monitor): router
 returns `["stock"]` alone → single lane → `full_refund` for the one line.
