@@ -62,13 +62,13 @@ Full prompt: `router.py::ROUTER_SYSTEM_PROMPT`.
 
 ### The part that tells the model to return the schema
 
-Sent verbatim with every request as `response_format: json_schema` (strict —
-the provider rejects answers that add fields or break the shape), plus this
+Sent with every request as `response_format: json_schema` — **this only
+constrains the reply; it is not trusted as enforcement** — plus this
 instruction in the fallback path (`router.py::JSON_ONLY_HINT`):
 
 > "Reply with ONLY a JSON object: `{"specialists": ["billing"], "reason": "...", "confidence": 0.0}` where specialists is a non-empty array drawn from billing, shipping, stock and confidence is a number between 0 and 1."
 
-And the strict schema itself (`router.py::JSON_SCHEMA`):
+And the schema itself (`router.py::JSON_SCHEMA`):
 
 ```json
 "schema": {
@@ -85,6 +85,30 @@ And the strict schema itself (`router.py::JSON_SCHEMA`):
   "additionalProperties": false
 }
 ```
+
+Enforcement stays on our side: every reply is validated by the Pydantic
+checker (`check_decision`) before anything is printed or used — the API's
+`response_format` only asks the provider to constrain generation and can be
+ignored by models without structured-output support (that is what the
+prompt-only fallback is for).
+
+## Evidence — the request on OpenRouter
+
+Screenshot of Logs → Generations showing the routing call for claim 1:
+![OpenRouter Logs — Generations](docs/activity-logs.png)
+
+Row: **Nov 14, 06:46 PM · ERNIE-5.5-Flash-Preview (free) · provider Baidu
+Qianfan · 292 tok input / 388 tok output · $0.00**. This is the display form of
+the model id printed in the decision above — `baidu/ernie-5.5-flash-preview:free`,
+read from `OPENROUTER_MODEL` in `.env`.
+
+Upstream detail (resolved snapshot):
+![OpenRouter Logs — Upstream Requests](docs/activity-upstream.png)
+
+Row: `ernie-5.5-flash-preview-20261110`, final provider Baidu Qianfan, status
+**200**, generation `gen-1794671209-LSH3OZOQtkQ3q6bUzzoR`, 1 attempt. OpenRouter
+resolves the `:free` alias to its current dated snapshot, which is why the
+upstream row carries the `-20261110` suffix.
 
 ## What I checked
 
