@@ -27,6 +27,34 @@ flowchart TD
 - **stock lane** — oversold lines, no restock date, lines canceled for
   unavailability.
 
+### Lane ownership — the call everything downstream depends on
+
+**Lanes are assigned by the root cause of the defect, not by the remedy.**
+Every lane's remedy is money back; what separates them is *which record the
+defect lives in*.
+
+| Lane | Owns (root cause) | Evidence view | Does NOT own |
+|---|---|---|---|
+| billing | money movements wrong in themselves: duplicate charges, charge after cancellation, fee/amount mismatch, missing credit/refund | payment records | why an item didn't ship or arrive |
+| shipping | fulfillment/delivery: lost, stalled tracking, "delivered" but not received, item missing from the box | carrier scans, delivery records | whether stock existed |
+| stock | supply: oversold, no restock date inside the promised window, line canceled for unavailability | inventory records | whether the payment was correct |
+
+Rules that follow:
+
+1. **One lane per distinct defect root cause.** A sold-out car seat with no
+   restock date routes to **stock only** — the charge for that line was correct,
+   so billing has no defect to find; the refund is the *remedy*, decided once
+   downstream by the case node, not a reason to involve billing. Billing judging
+   inventory with payment records would double-own one defect and can raise a
+   false disagreement flag.
+2. **A claim with several defects fans out to several lanes** — claim 1 carries
+   three distinct defects, each with its own owner: double charge → billing,
+   car seat line never shipped → shipping, car seat sold out → stock.
+3. **Boundary example (CLM-0014):** seller canceled a sold-out pack (stock
+   defect) *and* payment captured both packs (billing defect) — two genuine
+   defects, hence the `billing|stock` label. Co-labeling happens when two root
+   causes really exist, never because the remedy is a refund.
+
 Each lane is the same node shape with a different specialist prompt and its own
 typed finding schema — one OpenRouter structured-output call per lane, temperature 0.
 
@@ -59,8 +87,10 @@ Claim: stroller + car seat, card charged twice for the whole order, only the
 stroller box arrived, seller page now says the car seat is out of stock.
 
 1. **router node** → `["billing", "shipping", "stock"]` (the stage-1 result,
-   confidence 0.95) → graph sends **three parallel lane tasks**.
-2. **billing lane** → duplicate settled charge → `action_refund` (the extra charge).
+   confidence 0.95) → graph sends **three parallel lane tasks** — one per
+   distinct defect root cause.
+2. **billing lane** → its defect is the duplicate settled charge (not the car
+   seat) → `action_refund` for the extra charge.
 3. **shipping lane** → only one box delivered; the car seat line never shipped →
    `action_refund` (missing shipment).
 4. **stock lane** → car seat oversold, no restock date → `action_refund` (canceled line).
